@@ -5,9 +5,7 @@ A comprehensive Home Assistant custom integration for Synology NAS, exposing
 powered by [`synology-api`](https://github.com/N4S4/synology-api).
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
-[![GitHub Release](https://img.shields.io/github/v/release/N4S4/homeassistant-synology-pro?style=for-the-badge)](https://github.com/N4S4/homeassistant-synology-pro/releases)
-[![GitHub License](https://img.shields.io/github/license/N4S4/homeassistant-synology-pro?style=for-the-badge)](LICENSE)
-[![GitHub Activity](https://img.shields.io/github/commit-activity/m/N4S4/homeassistant-synology-pro?style=for-the-badge)](https://github.com/N4S4/homeassistant-synology-pro/commits)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=for-the-badge)](LICENSE)
 
 <p align="center">
   <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=N4S4&repository=homeassistant-synology-pro&category=integration">
