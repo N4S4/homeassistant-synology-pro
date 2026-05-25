@@ -6,7 +6,5 @@
   "homeassistant": "2024.1.0",
   "hide_default_branch": true,
   "render_readme": true,
-  "domains": ["sensor", "binary_sensor", "switch"],
-  "iot_class": "local_polling",
-  "country": ["IT", "EN", "DE", "FR", "ES"]
+  "country": ["IT", "GB", "DE", "FR", "ES", "US"]
 }
