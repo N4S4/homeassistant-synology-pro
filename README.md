@@ -206,5 +206,9 @@ GPL-3.0 — see [LICENSE](LICENSE).
 ## Related Projects
 
 - [synology-api](https://github.com/N4S4/synology-api) — Python wrapper for Synology DSM APIs
-<!---- [synology-dashboard](https://github.com/N4S4/synology-dashboard) — Web dashboard for NAS management--->
-<!---- [synology-api-recipes](https://github.com/N4S4/synology-api-recipes) — Cookbook of ready-to-use scripts--->
+- [synology-dashboard](https://github.com/N4S4/synology-dashboard) — Web dashboard for NAS management
+- [synology-api-recipes](https://github.com/N4S4/synology-api-recipes) — Cookbook of ready-to-use scripts
+
+---
+
+© 2026 Renato Visaggio. Licensed under GPL-3.0.
