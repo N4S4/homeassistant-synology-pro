@@ -1,7 +1,7 @@
 # Home Assistant Synology Pro
 
 A comprehensive Home Assistant custom integration for Synology NAS, exposing
-**all** DSM subsystems as sensors, binary sensors, switches, and services —
+**all** DSM subsystems as sensors, binary sensors, switches, and services,
 powered by [`synology-api`](https://github.com/N4S4/synology-api).
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
@@ -19,7 +19,7 @@ powered by [`synology-api`](https://github.com/N4S4/synology-api).
 
 All sensors, binary sensors, and switches are **dynamically discovered**
 from your NAS via the [`synology-api`](https://github.com/N4S4/synology-api)
-library — no hardcoded entities.
+library. No hardcoded entities.
 
 ### Sensors (~20 enabled by default, 2,000+ available)
 - **System:** model, DSM version, serial, RAM, CPU temperature, uptime
@@ -30,7 +30,7 @@ library — no hardcoded entities.
 - **Downloads:** active download count
 - **File Station:** service status
 
-### Additional Modules (disabled by default — enable as needed)
+### Additional Modules (disabled by default, enable as needed)
 - **Storage:** volume info, per-disk temperature, SMART status
 - **Network:** interface details, firewall, DDNS, QuickConnect
 - **Docker:** per-container stats, images, resources
@@ -40,11 +40,11 @@ library — no hardcoded entities.
 - **USB Copy, Note Station, Drive Admin Console, and more**
 
 ### Services (callable from automations)
-- `synology_pro.create_snapshot` — Create a share snapshot
-- `synology_pro.delete_snapshot` — Delete a share snapshot
-- `synology_pro.restart_container` — Restart a Docker container
-- `synology_pro.update_container` — Pull latest image & recreate
-- `synology_pro.run_security_scan` — Trigger Security Advisor scan
+- `synology_pro.create_snapshot`: Create a share snapshot
+- `synology_pro.delete_snapshot`: Delete a share snapshot
+- `synology_pro.restart_container`: Restart a Docker container
+- `synology_pro.update_container`: Pull latest image & recreate
+- `synology_pro.run_security_scan`: Trigger Security Advisor scan
 
 ## Installation
 
@@ -73,14 +73,20 @@ The integration uses the Home Assistant config flow (UI):
 
 | Field | Description | Default |
 |-------|-------------|---------|
-| **Host** | NAS IP address or hostname | — |
+| **Host** | NAS IP address or hostname | |
 | **Port** | DSM port | `5001` |
-| **Username** | DSM account with admin rights | — |
-| **Password** | DSM password | — |
+| **Username** | DSM account with admin rights | |
+| **Password** | DSM password | |
+| **Verification code** | 2FA code (optional, only if enabled on the account) | |
 | **Use SSL** | Enable HTTPS | ✅ On |
 | **Verify SSL** | Validate certificate | ❌ Off |
 | **DSM Version** | 6 or 7 | `7` |
 | **Poll Interval** | Sensor refresh (seconds) | `60` |
+
+If your DSM account has two-factor authentication enabled, enter the
+verification code once during setup. The integration exchanges it for a
+device token, stores it, and reuses it on every refresh. No further codes
+are needed after the first login.
 
 ## Automation Examples
 
@@ -125,8 +131,8 @@ The integration uses the Home Assistant config flow (UI):
 ## Entities Created
 
 All entities are dynamically discovered from your NAS via the
-[`synology-api`](https://github.com/N4S4/synology-api) Python library —
-**every available API endpoint is probed** and its data exposed as sensors.
+[`synology-api`](https://github.com/N4S4/synology-api) Python library.
+**Every available API endpoint is probed** and its data exposed as sensors.
 
 ### How many entities?
 
@@ -176,7 +182,7 @@ Only the most useful sensors start active:
 
 > **Tip for admin accounts:** if you use a DSM administrator account,
 > the number of discovered entities grows significantly (2,000+). The
-> curated default keeps your dashboard clean — enable only what you need.
+> curated default keeps your dashboard clean. Enable only what you need.
 
 ### Account permissions matter
 
@@ -201,13 +207,13 @@ Pull requests welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-GPL-3.0 — see [LICENSE](LICENSE).
+GPL-3.0. See [LICENSE](LICENSE).
 
 ## Related Projects
 
-- [synology-api](https://github.com/N4S4/synology-api) — Python wrapper for Synology DSM APIs
-- [synology-dashboard](https://github.com/N4S4/synology-dashboard) — Web dashboard for NAS management
-- [synology-api-recipes](https://github.com/N4S4/synology-api-recipes) — Cookbook of ready-to-use scripts
+- [synology-api](https://github.com/N4S4/synology-api): Python wrapper for Synology DSM APIs
+- [synology-dashboard](https://github.com/N4S4/synology-dashboard): Web dashboard for NAS management
+- [synology-api-recipes](https://github.com/N4S4/synology-api-recipes): Cookbook of ready-to-use scripts
 
 ---
 
