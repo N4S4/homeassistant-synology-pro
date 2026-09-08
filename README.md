@@ -46,6 +46,11 @@ library. No hardcoded entities.
 - `synology_pro.update_container`: Pull latest image & recreate
 - `synology_pro.run_security_scan`: Trigger Security Advisor scan
 
+### Multiple NAS devices
+
+You can add more than one NAS. Each device keeps its own entities, so two
+devices never mix or overwrite each other, even after a reload.
+
 ## Installation
 
 ### HACS (Recommended)
