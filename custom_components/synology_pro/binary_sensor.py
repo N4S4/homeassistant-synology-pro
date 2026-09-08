@@ -117,7 +117,8 @@ class SynologyDynamicBinarySensor(CoordinatorEntity, BinarySensorEntity):
         # Standard HA pattern for entity_registry_enabled_default
         self._attr_entity_registry_enabled_default = enabled_default
         self._attr_name = sensor_key.replace(".", " ").replace("_", " ").title()
-        self._attr_unique_id = f"{DOMAIN}_bin_{sensor_key.replace('.', '_')}"
+        self._host = coordinator.config["host"].replace(".", "_").replace(":", "_")
+        self._attr_unique_id = f"{DOMAIN}_bin_{self._host}_{sensor_key.replace('.', '_')}"
         self._attr_device_class = device_class
         if icon:
             self._attr_icon = icon
@@ -137,7 +138,7 @@ class SynologyDynamicBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
 
 class SynologyHealthBinarySensor(CoordinatorEntity, BinarySensorEntity):
-    """Synthetic sensor: True if the coordinator successfully fetched data."""
+    """Synthetic sensor: PROBLEM-class, on when the last update failed."""
 
     _attr_entity_registry_enabled_default = True
 
@@ -146,7 +147,8 @@ class SynologyHealthBinarySensor(CoordinatorEntity, BinarySensorEntity):
         super().__init__(coordinator)
         self._enabled_default = True
         self._attr_name = "System Health"
-        self._attr_unique_id = f"{DOMAIN}_system_health"
+        self._host = coordinator.config["host"].replace(".", "_").replace(":", "_")
+        self._attr_unique_id = f"{DOMAIN}_{self._host}_system_health"
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM
         self._attr_icon = "mdi:shield-check"
 
@@ -158,6 +160,9 @@ class SynologyHealthBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        """True if coordinator has data."""
-        sensors = self.coordinator.data.get("sensors", {})
-        return len(sensors) > 0
+        """True if there is a problem (last coordinator update failed).
+
+        With device_class PROBLEM, ``is_on=True`` means "problem detected".
+        The connection is healthy when the last update succeeded.
+        """
+        return not self.coordinator.last_update_success

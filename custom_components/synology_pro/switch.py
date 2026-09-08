@@ -70,7 +70,8 @@ class DockerContainerSwitch(CoordinatorEntity, SwitchEntity):
         self._container_id = container_id
         self._container_name = container_name
         self._attr_name = f"Container {container_name}"
-        self._attr_unique_id = f"{DOMAIN}_container_{container_id}"
+        self._host = coordinator.config["host"].replace(".", "_").replace(":", "_")
+        self._attr_unique_id = f"{DOMAIN}_{self._host}_container_{container_id}"
         self._attr_icon = "mdi:docker"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, coordinator.config["host"])},

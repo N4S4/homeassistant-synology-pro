@@ -145,7 +145,8 @@ class SynologyDynamicSensor(CoordinatorEntity, SensorEntity):
         self._attr_entity_registry_enabled_default = enabled_default
         # Human-readable name from key
         self._attr_name = sensor_key.replace(".", " ").replace("_", " ").title()
-        self._attr_unique_id = f"{DOMAIN}_{sensor_key.replace('.', '_')}"
+        self._host = coordinator.config["host"].replace(".", "_").replace(":", "_")
+        self._attr_unique_id = f"{DOMAIN}_{self._host}_{sensor_key.replace('.', '_')}"
         self._attr_native_unit_of_measurement = unit
         self._attr_device_class = device_class
         self._attr_state_class = state_class
