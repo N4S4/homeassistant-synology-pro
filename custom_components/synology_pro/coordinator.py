@@ -258,6 +258,53 @@ def _extract_containers(result: dict) -> list:
     return containers
 
 
+def _extract_cameras(result: dict) -> list:
+    """Normalize surveillancestation.camera_list() into a list of camera dicts.
+
+    camera_list() returns {"data": {"cameras": [...]}, "success": true}.
+    Each camera dict carries id, newName, model, vendor, ip, status, etc.
+    """
+    raw = result.get("data", {}) if isinstance(result, dict) else {}
+    raw_list = raw.get("cameras", []) if isinstance(raw, dict) else []
+    cameras = []
+    if isinstance(raw_list, list):
+        for c in raw_list:
+            if not isinstance(c, dict):
+                continue
+            cameras.append({
+                "id": c.get("id"),
+                "name": c.get("newName") or c.get("name") or "",
+                "status": c.get("status"),
+                "model": c.get("model", ""),
+                "vendor": c.get("vendor", ""),
+                "ip": c.get("ip", ""),
+            })
+    return cameras
+
+
+def _count_events(result) -> int:
+    """Defensively count events from a per-camera event enumeration response.
+
+    The exact shape varies by DSM/Surveillance Station version, so we accept
+    a list result, or a dict result exposing a list under data.{events,
+    eventList, items} or an int under data.{total, count, num}.
+    """
+    if isinstance(result, list):
+        return len(result)
+    if isinstance(result, dict):
+        data = result.get("data", {})
+        if isinstance(data, list):
+            return len(data)
+        if isinstance(data, dict):
+            for key in ("events", "eventList", "items", "cameras"):
+                if isinstance(data.get(key), list):
+                    return len(data[key])
+            for key in ("total", "count", "num", "totalNum"):
+                if isinstance(data.get(key), int):
+                    return data[key]
+    return 0
+
+
 def _flatten_dict(d: dict, prefix: str = "") -> dict[str, Any]:
     """Flatten a nested dict into dot-notation keys, filtering out complex values."""
     result = {}
@@ -314,21 +361,24 @@ class SynologyDynamicCoordinator(DataUpdateCoordinator):
         sensors: dict[str, Any] = {}
 
         for module_name, cfg in API_DISCOVERY.items():
-            mod_sensors, containers = self._probe_module(module_name, cfg)
+            mod_sensors, containers, cameras = self._probe_module(module_name, cfg)
             sensors.update(mod_sensors)
             if containers is not None:
                 data["containers"] = containers
+            if cameras is not None:
+                data["cameras"] = cameras
 
         data["sensors"] = sensors
         return data
 
     def _probe_module(self, module_name: str, cfg: dict):
-        """Probe a single module (blocking); return (sensors, containers_or_None)."""
+        """Probe a single module (blocking); return (sensors, containers, cameras)."""
         config = self.config
         class_name = cfg["class"]
         methods = cfg["methods"]
         sensors: dict[str, Any] = {}
         containers = None
+        cameras = None
 
         try:
             mod = __import__(f"synology_api.{module_name}", fromlist=[class_name])
@@ -343,7 +393,7 @@ class SynologyDynamicCoordinator(DataUpdateCoordinator):
             )
         except Exception as e:
             _LOGGER.debug("Module %s unavailable: %s", module_name, e)
-            return sensors, containers
+            return sensors, containers, cameras
 
         for method_name in methods:
             try:
@@ -367,6 +417,13 @@ class SynologyDynamicCoordinator(DataUpdateCoordinator):
                     containers = _extract_containers(result)
                     sensors[f"{module_name}.{method_name}.count"] = {
                         "value": len(containers),
+                        "type": "int",
+                    }
+
+                elif module_name == "surveillancestation" and method_name == "camera_list":
+                    cameras = _extract_cameras(result)
+                    sensors[f"{module_name}.{method_name}.cameras.count"] = {
+                        "value": len(cameras),
                         "type": "int",
                     }
 
@@ -396,4 +453,59 @@ class SynologyDynamicCoordinator(DataUpdateCoordinator):
                     "Method %s.%s() failed: %s", module_name, method_name, e
                 )
 
-        return sensors, containers
+        # ── Per-camera probing (Surveillance Station) ──
+        if module_name == "surveillancestation" and cameras:
+            self._probe_cameras(api, cameras, sensors)
+
+        return sensors, containers, cameras
+
+    def _probe_cameras(self, api, cameras: list, sensors: dict[str, Any]) -> None:
+        """Iterate cameras and query per-camera APIs using cameraId.
+
+        Populates ``sensors`` with keys like
+        ``surveillancestation.camera.<id>.motion_events``. Each per-camera
+        call is guarded so one failing camera never aborts the others.
+        """
+        for cam in cameras:
+            cam_id = cam.get("id")
+            if cam_id is None:
+                continue
+            base = f"surveillancestation.camera.{cam_id}"
+
+            # Identity fields from camera_list
+            for field in ("name", "status", "model", "vendor", "ip"):
+                val = cam.get(field)
+                if val not in (None, ""):
+                    sensors[f"{base}.{field}"] = {
+                        "value": val,
+                        "type": type(val).__name__,
+                    }
+
+            # get_camera_info (single camera)
+            try:
+                info = api.get_camera_info(cameraIds=cam_id, basic=True)
+                if isinstance(info, dict):
+                    raw = info.get("data", info)
+                    if isinstance(raw, dict):
+                        flat = _flatten_dict(raw, "")
+                        for key, value in flat.items():
+                            sensors[f"{base}.info.{key}"] = {
+                                "value": value,
+                                "type": type(value).__name__,
+                            }
+            except Exception as e:
+                _LOGGER.debug("get_camera_info cam %s failed: %s", cam_id, e)
+
+            # motion_event_enum
+            try:
+                n = _count_events(api.motion_event_enum(camId=cam_id))
+                sensors[f"{base}.motion_events"] = {"value": n, "type": "int"}
+            except Exception as e:
+                _LOGGER.debug("motion_event_enum cam %s failed: %s", cam_id, e)
+
+            # alarm_event_enum
+            try:
+                n = _count_events(api.alarm_event_enum(camId=cam_id))
+                sensors[f"{base}.alarm_events"] = {"value": n, "type": "int"}
+            except Exception as e:
+                _LOGGER.debug("alarm_event_enum cam %s failed: %s", cam_id, e)
