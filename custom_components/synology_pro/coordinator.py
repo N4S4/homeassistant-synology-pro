@@ -136,6 +136,8 @@ API_DISCOVERY = {
     "surveillancestation": {
         "class": "SurveillanceStation",
         "methods": [
+            "surveillance_station_info",
+            "camera_list",
             "alarm_event_enum",
         ],
     },
