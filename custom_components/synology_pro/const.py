@@ -68,7 +68,6 @@ PRIMARY_PREFIXES: list[str] = [
     # ── Surveillance Station ──
     "surveillancestation.surveillance_station_info",
     "surveillancestation.camera_list.cameras.count",
-    "surveillancestation.camera.",  # per-camera entities (status, name, events)
 ]
 
 

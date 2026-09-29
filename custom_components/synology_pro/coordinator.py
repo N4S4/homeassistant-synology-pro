@@ -138,6 +138,7 @@ API_DISCOVERY = {
         "methods": [
             "surveillance_station_info",
             "camera_list",
+            "alarm_event_enum",
         ],
     },
     "core_active_backup": {
