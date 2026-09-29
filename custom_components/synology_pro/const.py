@@ -65,6 +65,9 @@ PRIMARY_PREFIXES: list[str] = [
     "downloadstation.tasks_list.count",
     # ── File Station ──
     "filestation.get_info",
+    # ── Surveillance Station ──
+    "surveillancestation.surveillance_station_info",
+    "surveillancestation.camera_list.cameras.count",
 ]
 
 
