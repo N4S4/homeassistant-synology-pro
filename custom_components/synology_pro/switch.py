@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
@@ -33,11 +34,8 @@ async def async_setup_entry(
 
     for c in containers:
         name = c.get("name", c.get("id", ""))
-        container_id = c.get("id", "")
-        if name and container_id:
-            entities.append(
-                DockerContainerSwitch(coordinator, container_id, name)
-            )
+        if name:
+            entities.append(DockerContainerSwitch(coordinator, name))
 
     _LOGGER.info("Synology Pro: discovered %d container switches", len(entities))
     async_add_entities(entities)
@@ -56,22 +54,31 @@ def _get_docker_client(config: dict):
     )
 
 
+def _sanitize_name(name: str) -> str:
+    """Turn a container name into a safe unique_id fragment."""
+    # Strip docker-style leading slash (/n8n -> n8n).
+    cleaned = name.strip().strip("/")
+    # Keep alphanumerics, dots, dashes, underscores; replace the rest.
+    cleaned = re.sub(r"[^0-9a-zA-Z._-]+", "_", cleaned)
+    return cleaned.strip("_") or "container"
+
+
 class DockerContainerSwitch(CoordinatorEntity, SwitchEntity):
     """Switch to start/stop a Docker container."""
 
     def __init__(
         self,
         coordinator: DataUpdateCoordinator,
-        container_id: str,
         container_name: str,
     ):
         """Initialize."""
         super().__init__(coordinator)
-        self._container_id = container_id
         self._container_name = container_name
-        self._attr_name = f"Container {container_name}"
+        self._attr_name = f"Container {container_name.strip('/')}"
         self._host = coordinator.config["host"].replace(".", "_").replace(":", "_")
-        self._attr_unique_id = f"{DOMAIN}_{self._host}_container_{container_id}"
+        self._attr_unique_id = (
+            f"{DOMAIN}_{self._host}_container_{_sanitize_name(container_name)}"
+        )
         self._attr_icon = "mdi:docker"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, coordinator.config["host"])},
@@ -84,7 +91,7 @@ class DockerContainerSwitch(CoordinatorEntity, SwitchEntity):
         """Return True if container is running, from coordinator data."""
         containers = self.coordinator.data.get("containers", [])
         for c in containers:
-            if c.get("id") == self._container_id:
+            if c.get("name") == self._container_name:
                 return c.get("running", False)
         return False
 
