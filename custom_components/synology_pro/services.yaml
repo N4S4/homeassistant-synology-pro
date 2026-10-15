@@ -63,3 +63,72 @@ update_container:
 run_security_scan:
   name: Run Security Scan
   description: Trigger a Security Advisor scan on the Synology NAS.
+
+create_vm_snapshot:
+  name: Create VM Snapshot
+  description: Create a snapshot of a virtual machine (VMM) on the Synology NAS.
+  fields:
+    vm_name:
+      name: VM Name
+      description: Name of the virtual machine to snapshot.
+      required: true
+      example: "proxmox"
+      selector:
+        text:
+    description:
+      name: Description
+      description: Optional description for the snapshot.
+      required: false
+      example: "Pre-update backup"
+      selector:
+        text:
+
+delete_vm_snapshot:
+  name: Delete VM Snapshot
+  description: Delete a snapshot of a virtual machine.
+  fields:
+    vm_name:
+      name: VM Name
+      description: Name of the virtual machine.
+      required: true
+      example: "proxmox"
+      selector:
+        text:
+    snapshot_id:
+      name: Snapshot ID
+      description: Snapshot ID to delete (from the snapshot list).
+      required: true
+      example: "04dc2bc8-...-gsnap-1234567"
+      selector:
+        text:
+
+list_vm_snapshots:
+  name: List VM Snapshots
+  description: List the snapshots of a virtual machine.
+  fields:
+    vm_name:
+      name: VM Name
+      description: Name of the virtual machine.
+      required: true
+      example: "proxmox"
+      selector:
+        text:
+
+restore_vm_snapshot:
+  name: Restore VM Snapshot
+  description: Restore a virtual machine from a snapshot.
+  fields:
+    vm_name:
+      name: VM Name
+      description: Name of the virtual machine.
+      required: true
+      example: "proxmox"
+      selector:
+        text:
+    snapshot_id:
+      name: Snapshot ID
+      description: Snapshot ID to restore from.
+      required: true
+      example: "04dc2bc8-...-gsnap-1234567"
+      selector:
+        text:

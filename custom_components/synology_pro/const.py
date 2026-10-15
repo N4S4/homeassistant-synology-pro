@@ -31,12 +31,18 @@ SERVICE_DELETE_SNAPSHOT = "delete_snapshot"
 SERVICE_RESTART_CONTAINER = "restart_container"
 SERVICE_UPDATE_CONTAINER = "update_container"
 SERVICE_RUN_SECURITY_SCAN = "run_security_scan"
+SERVICE_CREATE_VM_SNAPSHOT = "create_vm_snapshot"
+SERVICE_DELETE_VM_SNAPSHOT = "delete_vm_snapshot"
+SERVICE_LIST_VM_SNAPSHOTS = "list_vm_snapshots"
+SERVICE_RESTORE_VM_SNAPSHOT = "restore_vm_snapshot"
 
 # Service attributes
 ATTR_SHARE = "share"
 ATTR_DESCRIPTION = "description"
 ATTR_SNAPSHOT_NAME = "snapshot_name"
 ATTR_CONTAINER_ID = "container_id"
+ATTR_VM_NAME = "vm_name"
+ATTR_SNAPSHOT_ID = "snapshot_id"
 
 # ── Entity priority: only these key prefixes start enabled ──────────
 # Every other sensor starts DISABLED and appears under
@@ -68,6 +74,7 @@ PRIMARY_PREFIXES: list[str] = [
     # ── Surveillance Station ──
     "surveillancestation.surveillance_station_info",
     "surveillancestation.camera_list.cameras.count",
+    "surveillancestation.camera.",  # per-camera entities (status, name, events)
 ]
 
 

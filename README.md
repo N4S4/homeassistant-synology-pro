@@ -45,6 +45,51 @@ library. No hardcoded entities.
 - `synology_pro.restart_container`: Restart a Docker container
 - `synology_pro.update_container`: Pull latest image & recreate
 - `synology_pro.run_security_scan`: Trigger Security Advisor scan
+- `synology_pro.create_vm_snapshot`: Snapshot a virtual machine
+- `synology_pro.delete_vm_snapshot`: Delete a VM snapshot
+- `synology_pro.list_vm_snapshots`: List a VM's snapshots
+- `synology_pro.restore_vm_snapshot`: Restore a VM from a snapshot
+
+### VM Snapshots (Virtual Machine Manager)
+
+These services snapshot and roll back virtual machines running on your NAS
+through [Virtual Machine Manager](https://www.synology.com/dsm/feature/virtual_machine_manager).
+They are **call-only** services: they create no entities, so nothing shows up
+on your dashboard. Trigger them from automations or
+**Developer Tools → Services**.
+
+Every call takes a `vm_name` field, which must match the VM name shown in
+Virtual Machine Manager exactly (it is case-sensitive).
+
+The flow is list → act:
+
+1. `synology_pro.list_vm_snapshots` with a `vm_name` returns every snapshot as
+   a response, each carrying a `gsnap_id`, `description` and `time`.
+2. Pass that `gsnap_id` to `delete_vm_snapshot` or `restore_vm_snapshot`.
+
+| Service | Fields | Response |
+|---------|--------|----------|
+| `create_vm_snapshot` | `vm_name`, `description` (optional) | none |
+| `list_vm_snapshots` | `vm_name` | `snapshots` list (below) |
+| `delete_vm_snapshot` | `vm_name`, `snapshot_id` | none |
+| `restore_vm_snapshot` | `vm_name`, `snapshot_id` | none |
+
+`list_vm_snapshots` responds with:
+
+```yaml
+snapshots:
+  - gsnap_id: "04dc2bc8-...-gsnap-1792071191"
+    description: "before upgrade"
+    time: "Thu Oct 15 15:33:11 CEST 2026"
+```
+
+Requirements: the
+[Virtual Machine Manager](https://www.synology.com/dsm/feature/virtual_machine_manager)
+package installed, and a DSM account with VMM permissions. Snapshots work on
+VMM **Basic** (no Pro license required).
+
+> **Heads-up:** `restore_vm_snapshot` powers off the VM while restoring, and
+> `delete_vm_snapshot` removes a snapshot permanently. Neither can be undone.
 
 ### Multiple NAS devices
 
@@ -131,6 +176,17 @@ are needed after the first login.
       data:
         share: "Documents"
         description: "Daily auto-snapshot"
+
+# Weekly VM snapshot before upgrades
+- alias: "Weekly VM Snapshot"
+  trigger:
+    - platform: time
+      at: "04:00:00"
+  action:
+    - service: synology_pro.create_vm_snapshot
+      data:
+        vm_name: "proxmox"
+        description: "Weekly auto-snapshot"
 ```
 
 ## Entities Created
