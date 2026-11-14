@@ -391,6 +391,11 @@ class SynologyDynamicCoordinator(DataUpdateCoordinator):
                 dsm_version=config.get("dsm_version", 7),
                 device_id=config.get("device_id"),
             )
+            # synology-api reuses a process-wide session. If FileStation created
+            # it (e.g. during config flow), core_list only contains FileStation
+            # APIs. Use the already-discovered full catalogue for this instance,
+            # without changing the shared session's application-filtered map.
+            api.core_list = {**api.core_list, **api.gen_list}
         except Exception as e:
             _LOGGER.debug("Module %s unavailable: %s", module_name, e)
             return sensors, containers, cameras
