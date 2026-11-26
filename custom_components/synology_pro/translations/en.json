@@ -48,5 +48,16 @@
     "abort": {
       "already_configured": "This NAS is already configured."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Synology Pro options",
+        "description": "DSM installs started from the update panel download the firmware and reboot the NAS.",
+        "data": {
+          "allow_dsm_install": "Allow DSM firmware installs from the update entity"
+        }
+      }
+    }
   }
 }

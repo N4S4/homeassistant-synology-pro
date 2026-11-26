@@ -6,11 +6,13 @@ import logging
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNAME
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 
 from synology_api.exceptions import LoginError
 
 from .const import (
+    CONF_ALLOW_DSM_INSTALL,
     CONF_DEVICE_ID,
     CONF_DSM_VERSION,
     CONF_OTP_CODE,
@@ -273,3 +275,31 @@ class SynologyProConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return getattr(fl.session, "device_id", None)
 
         return await self.hass.async_add_executor_job(_connect)
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Return the options flow for this integration."""
+        return SynologyProOptionsFlow()
+
+
+class SynologyProOptionsFlow(config_entries.OptionsFlow):
+    """Options for Synology Pro."""
+
+    async def async_step_init(self, user_input=None):
+        """Allow or deny DSM installs started from the update entity."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_ALLOW_DSM_INSTALL,
+                        default=self.config_entry.options.get(
+                            CONF_ALLOW_DSM_INSTALL, False
+                        ),
+                    ): bool,
+                }
+            ),
+        )

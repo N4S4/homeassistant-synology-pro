@@ -1,8 +1,8 @@
 # Home Assistant Synology Pro
 
 A comprehensive Home Assistant custom integration for Synology NAS, exposing
-**all** DSM subsystems as sensors, binary sensors, switches, and services,
-powered by [`synology-api`](https://github.com/N4S4/synology-api).
+**all** DSM subsystems as sensors, binary sensors, switches, update entities,
+and services, powered by [`synology-api`](https://github.com/N4S4/synology-api).
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=for-the-badge)](LICENSE)
@@ -39,6 +39,11 @@ library. No hardcoded entities.
 - **Log Center, Snapshots, Backup, Certificates, Users, Shares, Groups**
 - **USB Copy, Note Station, Drive Admin Console, and more**
 
+### Update entities
+- DSM firmware and Package Center packages appear in Settings > Updates.
+- Packages with a pending update can be installed from the panel.
+- DSM installs are opt-in and reboot the NAS.
+
 ### Services (callable from automations)
 - `synology_pro.create_snapshot`: Create a share snapshot
 - `synology_pro.delete_snapshot`: Delete a share snapshot
@@ -49,6 +54,12 @@ library. No hardcoded entities.
 - `synology_pro.delete_vm_snapshot`: Delete a VM snapshot
 - `synology_pro.list_vm_snapshots`: List a VM's snapshots
 - `synology_pro.restore_vm_snapshot`: Restore a VM from a snapshot
+- `synology_pro.list_vm`: List virtual machines
+- `synology_pro.list_packages`: List installed Package Center packages
+- `synology_pro.update_package`: Download and install a package update
+- `synology_pro.check_dsm_update`: Check for a DSM firmware update
+- `synology_pro.download_dsm_update`: Download the DSM firmware update
+- `synology_pro.install_dsm_update`: Install the downloaded DSM update
 
 ### VM Snapshots (Virtual Machine Manager)
 
@@ -58,21 +69,29 @@ They are **call-only** services: they create no entities, so nothing shows up
 on your dashboard. Trigger them from automations or
 **Developer Tools → Services**.
 
-Every call takes a `vm_name` field, which must match the VM name shown in
-Virtual Machine Manager exactly (it is case-sensitive).
+The snapshot calls take a `vm_name` field, which must match the VM name
+shown in Virtual Machine Manager exactly (it is case-sensitive).
 
 The flow is list → act:
 
-1. `synology_pro.list_vm_snapshots` with a `vm_name` returns every snapshot as
-   a response, each carrying a `gsnap_id`, `description` and `time`.
-2. Pass that `gsnap_id` to `delete_vm_snapshot` or `restore_vm_snapshot`.
+1. `synology_pro.list_vm` returns the VMs and their state. Use `guest_name`
+   as the `vm_name` for the snapshot calls. It takes an optional `vm_name`
+   filter.
+2. `synology_pro.list_vm_snapshots` with a `vm_name` returns the snapshots,
+   newest first. Each carries a `gsnap_id`, `description`, `time`,
+   `is_user_locked` and `status`. The optional `limit` caps the result.
+3. Pass that `gsnap_id` to `delete_vm_snapshot` or `restore_vm_snapshot`.
 
 | Service | Fields | Response |
 |---------|--------|----------|
-| `create_vm_snapshot` | `vm_name`, `description` (optional) | none |
-| `list_vm_snapshots` | `vm_name` | `snapshots` list (below) |
+| `list_vm` | `vm_name` (optional) | `vms` list |
+| `create_vm_snapshot` | `vm_name`, `description` (optional), `lock` (optional) | none |
+| `list_vm_snapshots` | `vm_name`, `limit` (optional) | `snapshots` list (below) |
 | `delete_vm_snapshot` | `vm_name`, `snapshot_id` | none |
 | `restore_vm_snapshot` | `vm_name`, `snapshot_id` | none |
+
+`create_vm_snapshot` accepts an optional `lock` flag. A locked snapshot is
+not removed by automatic retention. It defaults to false.
 
 `list_vm_snapshots` responds with:
 
@@ -81,6 +100,7 @@ snapshots:
   - gsnap_id: "04dc2bc8-...-gsnap-1792071191"
     description: "before upgrade"
     time: "Thu Oct 15 15:33:11 CEST 2026"
+    is_user_locked: false
 ```
 
 Requirements: the
@@ -90,6 +110,65 @@ VMM **Basic** (no Pro license required).
 
 > **Heads-up:** `restore_vm_snapshot` powers off the VM while restoring, and
 > `delete_vm_snapshot` removes a snapshot permanently. Neither can be undone.
+
+### Package and DSM updates
+
+The integration creates update entities for the DSM firmware and for every
+package installed through Package Center. They appear in
+**Settings → Updates** and are checked every 6 hours. This is separate from
+the sensor discovery above: the update platform adds one DSM entity and one
+entity per installed package, not thousands of sensors.
+
+- A package with a pending update shows the installed and the available
+  version. **Install** downloads the spk, verifies it and upgrades the
+  package. It is the same path as `synology_pro.update_package`.
+- The DSM entity shows the installed version and, when DSM reports one, the
+  available firmware with its release notes. The install button is disabled
+  by default because the install reboots the NAS. Enable
+  **Allow DSM firmware installs from the update entity** in the integration
+  options to use it. The install path is download, pre-checks, install.
+
+Scope: this covers Package Center packages. Docker containers do not
+appear. A manually uploaded spk is not in the Package Center catalogue, so
+it cannot be updated from here.
+
+#### Update services
+
+| Service | Fields | Response |
+|---------|--------|----------|
+| `list_packages` | `package_id` (optional), `only_updates` (optional, default false) | `packages` list and `count` |
+| `update_package` | `package_id` (required), `download_only` (optional, default false), `timeout` (optional, default 300 s) | `success`, `up_to_date`, `downloaded`, `installed`, `version` |
+| `check_dsm_update` | none | `available`, `version`, `title`, `release_notes`, `details` |
+| `download_dsm_update` | `timeout` (optional, default 300 s, 0 returns after the start) | `success`, `started`, `completed`, `percent`, `status` |
+| `install_dsm_update` | `confirm` (required true), `base` and `nano` (optional build), `lang` (optional, default `enu`) | `success`, `installing`, `note`, `steps` |
+
+`list_packages` returns one entry per installed package with `id`, `name`,
+`version`, `latest_version`, `status`, `autoupdate`, `update_available` and
+`available_operation`. `only_updates` keeps only the packages with a pending
+update. The service refreshes the Package Center catalogue first: DSM reports
+the pending operation on the installed list only after that refresh.
+
+`update_package` compares the catalogue version with the installed one. Use
+`download_only` to fetch the spk without installing it. The optional
+`timeout` caps the download wait.
+
+`download_dsm_update` only fetches the firmware. `install_dsm_update` runs
+the DSM basic status, feasibility and pre-check calls first, stops when one
+reports a blocking problem, and only then starts the install. It requires
+`confirm: true`. If `base` and `nano` are omitted, the upgradeable drive
+check is skipped. A dropped connection after the install call is expected:
+the NAS is rebooting.
+
+Typical DSM flow:
+
+1. `check_dsm_update` to see whether a firmware update is available.
+2. `download_dsm_update` with `timeout: 0` to start the download and return,
+   or with a timeout to wait for it.
+3. `install_dsm_update` with `confirm: true` after a backup.
+
+The DSM install reboots the NAS, interrupts every service on it and cannot
+be undone. The package install writes to the NAS. Test both on a
+non-critical target first.
 
 ### Multiple NAS devices
 
@@ -137,6 +216,17 @@ If your DSM account has two-factor authentication enabled, enter the
 verification code once during setup. The integration exchanges it for a
 device token, stores it, and reuses it on every refresh. No further codes
 are needed after the first login.
+
+### Options
+
+Open **Settings → Devices & Services → Synology Pro → Configure** to set:
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| **Allow DSM firmware installs from the update entity** | Adds the install button to the DSM update entity. The install downloads the firmware, runs the DSM pre-checks and reboots the NAS. | Off |
+
+The option is read live. With it off, the DSM update entity is read only and
+`synology_pro.install_dsm_update` still requires `confirm: true`.
 
 ## Automation Examples
 
@@ -259,8 +349,8 @@ Use a restricted account for a leaner integration, or an admin account for full 
 ## Requirements
 
 - Home Assistant 2024.1+
-- Python 3.9+
-- `synology-api` library (auto-installed)
+- Python 3.11+
+- `synology-api >= 0.9.6` (auto-installed)
 
 ## Contributing
 

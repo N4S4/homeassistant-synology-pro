@@ -82,6 +82,13 @@ create_vm_snapshot:
       example: "Pre-update backup"
       selector:
         text:
+    lock:
+      name: Lock
+      description: Lock the snapshot so it is not removed by automatic retention. Default false.
+      required: false
+      example: false
+      selector:
+        boolean:
 
 delete_vm_snapshot:
   name: Delete VM Snapshot
@@ -104,7 +111,7 @@ delete_vm_snapshot:
 
 list_vm_snapshots:
   name: List VM Snapshots
-  description: List the snapshots of a virtual machine.
+  description: List the snapshots of a virtual machine, newest first.
   fields:
     vm_name:
       name: VM Name
@@ -113,6 +120,15 @@ list_vm_snapshots:
       example: "proxmox"
       selector:
         text:
+    limit:
+      name: Limit
+      description: Optional maximum number of snapshots to return (newest first).
+      required: false
+      example: 5
+      selector:
+        number:
+          min: 1
+          mode: box
 
 restore_vm_snapshot:
   name: Restore VM Snapshot
@@ -130,5 +146,149 @@ restore_vm_snapshot:
       description: Snapshot ID to restore from.
       required: true
       example: "04dc2bc8-...-gsnap-1234567"
+      selector:
+        text:
+
+list_packages:
+  name: List Packages
+  description: >-
+    List packages installed through Package Center with their version and update
+    state. Packages installed outside Package Center, such as Docker containers
+    or manually uploaded spk files, do not appear here.
+  fields:
+    package_id:
+      name: Package ID
+      description: Optional. Return only this package.
+      required: false
+      example: "PlexMediaServer"
+      selector:
+        text:
+    only_updates:
+      name: Only Updates
+      description: Return only packages with a pending update.
+      required: false
+      example: false
+      selector:
+        boolean:
+
+check_dsm_update:
+  name: Check DSM Update
+  description: >-
+    Check whether a DSM system update is available. This only reads the update
+    server response, it does not download or install anything.
+
+update_package:
+  name: Update Package
+  description: >-
+    Download and install the latest version of an installed package, by package
+    ID. Set download only to stop after the download.
+  fields:
+    package_id:
+      name: Package ID
+      description: ID of the installed package to update.
+      required: true
+      example: "PlexMediaServer"
+      selector:
+        text:
+    download_only:
+      name: Download Only
+      description: >-
+        Download the update but do not install it. Default false.
+      required: false
+      example: false
+      selector:
+        boolean:
+    timeout:
+      name: Timeout
+      description: >-
+        Maximum seconds to wait for the download to finish. Default 300.
+      required: false
+      example: 300
+      selector:
+        number:
+          min: 10
+          max: 3600
+          unit_of_measurement: seconds
+          mode: box
+
+list_vm:
+  name: List VMs
+  description: List all virtual machines with their name, status and details.
+  fields:
+    vm_name:
+      name: VM Name
+      description: Optional. Filter the result to a single virtual machine by name.
+      required: false
+      example: "proxmox"
+      selector:
+        text:
+
+download_dsm_update:
+  name: Download DSM Update
+  description: >-
+    Start the DSM system update download. This only fetches the update file, it
+    does not install anything. Set timeout to 0 to start the download and return
+    without waiting.
+  fields:
+    timeout:
+      name: Timeout
+      description: >-
+        Maximum seconds to wait for the download to finish. Default 300. Use 0
+        to return right after the download starts.
+      required: false
+      example: 300
+      selector:
+        number:
+          min: 0
+          max: 7200
+          unit_of_measurement: seconds
+          mode: box
+
+install_dsm_update:
+  name: Install DSM Update
+  description: >-
+    Install the DSM update that was already downloaded. This reboots the NAS and
+    interrupts every service on it, and it cannot be undone. The service runs the
+    DSM feasibility and pre-checks first and stops when one reports a blocking
+    problem.
+  fields:
+    confirm:
+      name: Confirm
+      description: >-
+        Required. Set to true to confirm the install and the reboot.
+      required: true
+      example: true
+      selector:
+        boolean:
+    base:
+      name: Build Base
+      description: >-
+        Optional. Integer base build of the target update, used for the drive
+        check. Leave empty to skip that check.
+      required: false
+      example: 72806
+      selector:
+        number:
+          min: 0
+          max: 999999
+          mode: box
+    nano:
+      name: Build Nano
+      description: >-
+        Optional. Integer nano revision of the target update, used together with
+        base.
+      required: false
+      example: 0
+      selector:
+        number:
+          min: 0
+          max: 999
+          mode: box
+    lang:
+      name: Language
+      description: >-
+        Language of the pre-check messages. Default enu.
+      required: false
+      example: "enu"
       selector:
         text:

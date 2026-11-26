@@ -4,7 +4,7 @@ from __future__ import annotations
 DOMAIN = "synology_pro"
 
 # Platforms
-PLATFORMS = ["sensor", "binary_sensor", "switch"]
+PLATFORMS = ["sensor", "binary_sensor", "switch", "update"]
 
 # Configuration keys
 CONF_HOST = "host"
@@ -17,6 +17,7 @@ CONF_DSM_VERSION = "dsm_version"
 CONF_SCAN_INTERVAL = "scan_interval"
 CONF_OTP_CODE = "otp_code"
 CONF_DEVICE_ID = "device_id"
+CONF_ALLOW_DSM_INSTALL = "allow_dsm_install"
 
 # Defaults
 DEFAULT_PORT = 5001
@@ -35,6 +36,12 @@ SERVICE_CREATE_VM_SNAPSHOT = "create_vm_snapshot"
 SERVICE_DELETE_VM_SNAPSHOT = "delete_vm_snapshot"
 SERVICE_LIST_VM_SNAPSHOTS = "list_vm_snapshots"
 SERVICE_RESTORE_VM_SNAPSHOT = "restore_vm_snapshot"
+SERVICE_LIST_VM = "list_vm"
+SERVICE_LIST_PACKAGES = "list_packages"
+SERVICE_CHECK_DSM_UPDATE = "check_dsm_update"
+SERVICE_UPDATE_PACKAGE = "update_package"
+SERVICE_DOWNLOAD_DSM_UPDATE = "download_dsm_update"
+SERVICE_INSTALL_DSM_UPDATE = "install_dsm_update"
 
 # Service attributes
 ATTR_SHARE = "share"
@@ -43,6 +50,16 @@ ATTR_SNAPSHOT_NAME = "snapshot_name"
 ATTR_CONTAINER_ID = "container_id"
 ATTR_VM_NAME = "vm_name"
 ATTR_SNAPSHOT_ID = "snapshot_id"
+ATTR_LOCK = "lock"
+ATTR_LIMIT = "limit"
+ATTR_PACKAGE_ID = "package_id"
+ATTR_ONLY_UPDATES = "only_updates"
+ATTR_DOWNLOAD_ONLY = "download_only"
+ATTR_TIMEOUT = "timeout"
+ATTR_CONFIRM = "confirm"
+ATTR_BUILD_BASE = "base"
+ATTR_BUILD_NANO = "nano"
+ATTR_LANG = "lang"
 
 # ── Entity priority: only these key prefixes start enabled ──────────
 # Every other sensor starts DISABLED and appears under

@@ -138,7 +138,6 @@ API_DISCOVERY = {
         "methods": [
             "surveillance_station_info",
             "camera_list",
-            "alarm_event_enum",
         ],
     },
     "core_active_backup": {
@@ -175,6 +174,14 @@ API_DISCOVERY = {
         "class": "Package",
         "methods": [
             "get_package_center_infos",
+        ],
+    },
+    "core_upgrade": {
+        "class": "CoreUpgrade",
+        "methods": [
+            "upgrade_basic_status",
+            "upgrade_group_setting_get",
+            "auto_upgrade_security_get",
         ],
     },
     "dhcp_server": {
